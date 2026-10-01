@@ -42,6 +42,12 @@ pre{background:#0f2238;color:#BFE3FF;border-radius:10px;padding:10px;font-size:1
 #toast{position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:12px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .3s}#toast.on{opacity:1}
 input[type=range]{width:100%}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+#splash{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:24px;color:#fff;background:linear-gradient(#0B2A55,#2F7FB5 70%,#BFD9EA)}
+#splash svg{position:absolute;left:0;right:0;bottom:0;width:100%;height:45%}
+#splash h2{font-size:40px;margin:0 0 8px;letter-spacing:1px}#splash p{max-width:320px;margin:0 0 24px;opacity:.92}
+#splash .btn{width:230px;margin-bottom:10px;font-size:16px;position:relative}#splash .btn:not(.alt){background:#fff;color:#0B2A55}
+.note{margin-top:10px;padding:10px;border-radius:8px;font-weight:600}.score{margin-top:8px;font-size:18px;font-weight:700}
+h1{cursor:pointer}
 </style></head><body>
 <div class="app">
 <header><h1>Éco-spectateur</h1><p>Alpes 2030 · données simulées</p>
@@ -50,7 +56,7 @@ input[type=range]{width:100%}
 <section id="s-carte" class="on spec"><h2>Consommation du site</h2>
 <div class="card"><svg id="map" viewBox="0 0 360 230" width="100%" role="img" aria-label="Carte schématique du site avec la consommation par zone"></svg>
 <div class="mute">Litres par personne et par jour. Touchez une zone.</div></div>
-<div class="card" id="detail"></div></section>
+<div class="card" id="detail"></div><div class="kpis" style="grid-template-columns:1fr 1fr"><div><b id="eco">1 240 L</b>économisés aujourd'hui</div><div><b>89 %</b>signalements résolus</div></div><div class="card" id="ia"></div><div class="card" id="rank"></div></section>
 
 <section id="s-sig" class="spec"><h2>Signaler une fuite</h2>
 <form id="form" class="card">
@@ -73,17 +79,17 @@ input[type=range]{width:100%}
 <div class="card"><label for="min" style="margin-top:0">Durée de ma douche : <span id="minv">4</span> min</label>
 <input type="range" id="min" min="2" max="15" value="4"><div id="shower"></div>
 <div class="mute">Ordre de grandeur : environ 10 litres par minute.</div></div>
-<div class="card"><b>Trois réflexes simples</b><ul style="margin:8px 0 0;padding-left:18px;line-height:1.6;font-size:14px"><li>Fermez le robinet pendant le savonnage.
-            </li><li>Signalez un robinet qui coule : une fuite continue gaspille des centaines de litres.</li><li>Préférez une douche courte à un bain.</li></ul></div></section>
+<div class="card"><b>Mes badges</b><div id="badges"></div></div><div class="card"><b>Trois réflexes simples</b><ul style="margin:8px 0 0;padding-left:18px;line-height:1.6;font-size:14px"><li>Fermez le robinet pendant le savonnage.</li><li>Signalez un robinet qui coule : une fuite continue gaspille des centaines de litres.</li><li>Préférez une douche courte à un bain.</li></ul></div></section>
 
 <section id="s-tech"><h2>Signalements reçus</h2>
 <div class="kpis"><div><b id="k1">0</b>nouveaux</div><div><b id="k2">0</b>en cours</div><div><b id="k3">0</b>résolus</div></div>
 <div style="display:flex;gap:8px;margin-bottom:12px"><button class="btn alt" id="sim">Simuler un signalement</button><button class="btn alt" id="clr">Vider</button></div>
 <div id="list"></div>
-<div class="card"><b>Dernier envoi vers HydroWise (simulation)</b><div class="mute">En réel : requête POST vers l'API du tableau de bord.</div><pre id="api">Aucun envoi pour le moment.</pre></div></section>
+<div class="card"><b>Historique des signalements</b><svg id="hist" viewBox="0 0 350 108" width="100%" role="img" aria-label="Signalements par jour"></svg><div class="mute">Jours passés simulés, aujourd'hui en direct.</div></div><div class="card"><b>Dernier envoi vers HydroWise (simulation)</b><div class="mute">En réel : requête POST vers l'API du tableau de bord.</div><pre id="api">Aucun envoi pour le moment.</pre></div></section>
 </main>
 <nav id="nav"><button data-t="s-carte" class="on">Carte</button><button data-t="s-sig">Signaler</button><button data-t="s-scan">Scanner</button><button data-t="s-tips">Gestes</button></nav>
-</div><div id="toast" role="status"></div>
+</div><div id="splash"><svg viewBox="0 0 400 200" preserveAspectRatio="none" aria-hidden="true"><path d="M0 200V120L70 50L120 100L190 20L270 110L330 60L400 130V200Z" fill="#E6EFF6"/><path d="M0 200V150L90 90L160 140L240 80L320 150L400 110V200Z" fill="#fff" opacity=".85"/></svg>
+<h2>HydroWise</h2><p>Préserver l'eau durant les Jeux Olympiques d'hiver 2030</p><button class="btn" id="go-spec">Spectateur</button><button class="btn alt" id="go-tech">Technicien</button></div><div id="toast" role="status"></div>
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -94,6 +100,7 @@ const OBJ=40, Z=[
  {id:'pistes',n:'Pistes et neige',v:19,x:150,y:55,w:110,h:60,t:'La neige de culture se pilote avec la météo et le niveau des retenues.'},
  {id:'hotel',n:'Hébergements',v:34,x:20,y:35,w:110,h:60,t:'Douches courtes et mousseurs réduisent l\'eau chaude consommée.'}];
 const PE=[['PE-03','Fontaine 3','fan'],['PE-07','Douches nord','village'],['PE-12','Fontaine 12','fan'],['PE-15','Sanitaires est','ice'],['PE-21','Point d\'eau piste B','pistes'],['PE-24','Lavabos bloc A','hotel'],['PE-30','Cuisine centrale','village']];
+const ICON={village:'🏠',fan:'🎪',ice:'❄️',pistes:'⛷️',hotel:'🛏️'};
 const TYPES=['Robinet qui coule','Fuite sur tuyau','Fontaine hors service','Autre'];
 const ST=['Nouveau','En cours','Résolu'],COL={Nouveau:'#C23B2E','En cours':'#E08A1E','Résolu':'#2E7D32'};
 const zn=id=>Z.find(z=>z.id===id);
@@ -104,13 +111,13 @@ function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');setT
 const lvl=v=>v<=OBJ*.8?'#2E7D32':v<=OBJ*1.15?'#E08A1E':'#C23B2E';
 function drawMap(){
  let s='<path d="M0 60 L60 20 L110 50 L170 10 L240 55 L300 25 L360 60 V230 H0Z" fill="#D5E3EF"/>';
- Z.forEach(z=>{s+=`<g><rect class="zone" tabindex="0" data-id="${z.id}" x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="12" fill="${lvl(z.v)}" opacity=".92" ${z.id===sel?'stroke="#0B2A55" stroke-width="3"':''} role="button" aria-label="${z.n} ${Math.round(z.v)} litres"/><text x="${z.x+z.w/2}" y="${z.y+z.h/2-2}" text-anchor="middle" fill="#fff" font-size="12" font-weight="700" pointer-events="none">${z.n}</text><text x="${z.x+z.w/2}" y="${z.y+z.h/2+15}" text-anchor="middle" fill="#fff" font-size="14" pointer-events="none">${Math.round(z.v)} L</text></g>`});
+ Z.forEach(z=>{s+=`<g><rect class="zone" tabindex="0" data-id="${z.id}" x="${z.x}" y="${z.y}" width="${z.w}" height="${z.h}" rx="12" fill="${lvl(z.v)}" opacity=".92" ${z.id===sel?'stroke="#0B2A55" stroke-width="3"':''} role="button" aria-label="${z.n} ${Math.round(z.v)} litres"/><text x="${z.x+8}" y="${z.y+20}" font-size="16" pointer-events="none">${ICON[z.id]}</text><text x="${z.x+z.w/2}" y="${z.y+z.h/2-2}" text-anchor="middle" fill="#fff" font-size="12" font-weight="700" pointer-events="none">${z.n}</text><text x="${z.x+z.w/2}" y="${z.y+z.h/2+15}" text-anchor="middle" fill="#fff" font-size="14" pointer-events="none">${Math.round(z.v)} L</text></g>`});
  $('#map').innerHTML=s;
  $$('.zone').forEach(r=>{const go=()=>{sel=r.dataset.id;drawMap();drawDetail()};r.onclick=go;r.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}}});
 }
 function drawDetail(){const z=zn(sel),p=Math.min(100,z.v/(OBJ*1.6)*100);
  $('#detail').innerHTML=`<b>${z.n}</b><div class="bar"><i style="width:${p}%;background:${lvl(z.v)}"></i></div><div>${Math.round(z.v)} L par personne et par jour · objectif ${OBJ} L</div><p class="mute" style="margin:8px 0 0">${z.t}</p>`}
-setInterval(()=>{Z.forEach(z=>{z.v=Math.max(10,z.v+(Math.random()-.5)*3)});drawMap();drawDetail()},3000);
+
 // formulaire
 $('#pe').innerHTML=PE.map(p=>`<option value="${p[0]}">${p[1]} (${zn(p[2]).n})</option>`).join('')+'<option value="AUTRE">Autre lieu</option>';
 $('#types').innerHTML=TYPES.map((t,i)=>`<label style="margin:0"><input type="radio" name="type" value="${t}" ${i?'':'checked'}><span>${t}</span></label>`).join('');
@@ -121,62 +128,26 @@ function addReport(o){const n=reports.length+1;const r={id:'SIG-'+String(n).padS
  reports.unshift(r);save();renderTech();$('#api').textContent='POST /api/signalements\n'+JSON.stringify({id:r.id,point_eau:r.pe,type:r.type,description:r.desc,photo:r.photo?'(image jointe)':null,horodatage:r.ts},null,2);return r}
 $('#form').onsubmit=e=>{e.preventDefault();const r=addReport({pe:$('#pe').value,type:document.querySelector('input[name=type]:checked').value,desc:$('#desc').value.trim(),photo});
  $('#confirm').style.display='block';$('#confirm').innerHTML=`<b>Signalement envoyé</b><p style="margin:6px 0 0">Référence ${r.id}. L'équipe technique le voit dans la vue HydroWise.</p>`;
- $('#desc').value='';$('#photo').value='';photo=null;$('#prev').style.display='none';toast('Signalement envoyé')};
+ $('#desc').value='';$('#photo').value='';photo=null;$('#prev').style.display='none';mine++;badges();toast('Signalement envoyé')};
 // scan
-$('#scan').onclick=()=>{const p=PE[Math.floor(Math.random()*PE.length)],ok=Math.random()>.25;
+$('#scan').onclick=()=>{scanned=true;badges();const p=PE[Math.floor(Math.random()*PE.length)],ok=Math.random()>.25;
  $('#scanres').style.display='block';$('#scanres').innerHTML=`<b>${p[1]}</b><div class="mute">${zn(p[2]).n} · ${p[0]}</div><p style="margin:8px 0;color:${ok?'#2E7D32':'#C23B2E'};font-weight:700">${ok?'En service':'Problème déjà signalé'}</p><p class="mute" style="margin:0 0 10px">${zn(p[2]).t}</p><button class="btn alt" id="gosig">Signaler un problème ici</button>`;
  $('#gosig').onclick=()=>{$('#pe').value=p[0];tab('s-sig')}};
-$('#min').oninput = () => {
+let mine=0,scanned=false,minNow=4,eco=1240,alerted={};
+function showerUI(){const m=+$('#min').value;minNow=m;$('#minv').textContent=m;const l=m*10,s=l-40;
+ const sc=s<=0?10:Math.max(0,10-Math.ceil(s/10)),lab=sc>=10?'🌱 Exemplaire':sc>=8?'✅ Bon comportement':sc>=5?'⚠️ Peut mieux faire':'🚨 Forte consommation';
+ const bad=s>0,msg=bad?`${s/10} minute${s>10?'s':''} supplémentaire${s>10?'s':''} = ${s} litres consommés en trop.`:"Bravo ! Vous restez dans l'objectif recommandé.";
+ const sav=bad?`Économie potentielle : ${s} L en passant à 4 minutes.`:`Économie : ${80-l} L par rapport à une douche de 8 minutes (80 L).`;
+ $('#shower').innerHTML=`<p style="font-size:22px;margin:8px 0 2px"><b>${l} litres</b></p><div class="mute" style="font-size:13px">Objectif recommandé : 4 minutes (40 litres).</div><div class="note" style="background:${bad?'#FFF3E0':'#E8F5E9'};color:${bad?'#E65100':'#2E7D32'}">${msg}</div><div style="margin-top:8px;font-size:13px">${sav}</div><div class="score" style="color:${sc>=8?'#2E7D32':sc>=5?'#E65100':'#C23B2E'}">Score éco : ${sc}/10 ${lab}</div>`;badges()}
+function badges(){const b=[];if(minNow<=4)b.push(['💧','Économe','Douche de 4 minutes ou moins']);if(mine>=1)b.push(['🌱',"Protecteur de l'eau",'Un signalement envoyé']);if(mine>=1&&scanned&&minNow<=4)b.push(['🏅','Ambassadeur HydroWise','Douche courte, scan et signalement']);
+ $('#badges').innerHTML=b.length?b.map(x=>`<div style="margin-top:8px"><span style="font-size:20px">${x[0]}</span> <b>${x[1]}</b><div class="mute">${x[2]}</div></div>`).join(''):'<div class="mute" style="margin-top:6px">Aucun badge pour le moment. Gardez votre douche à 4 minutes ou moins.</div>'}
+function rank(){const s=[...Z].sort((a,b)=>a.v-b.v),M=['🥇','🥈','🥉'];$('#rank').innerHTML='<b>Classement des zones</b>'+s.map((z,i)=>`<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:14px"><span>${M[i]||(i+1)+'.'} ${z.n}</span><b>${Math.round(z.v)} L</b></div>`).join('')+'<div class="mute" style="margin-top:6px">Les moins gourmandes en premier.</div>'}
+function ia(){const s=[...Z].sort((a,b)=>a.v-b.v),lo=s[0],hi=s[s.length-1],p=PE.find(x=>x[2]===lo.id);
+ $('#ia').innerHTML=`<b>🤖 Conseil HydroWise</b><p style="margin:6px 0 0">Privilégiez ${p[1]} (${p[0]}, ${lo.n}), moins fréquenté actuellement.${hi.v>OBJ*1.15?` Consommation élevée à ${hi.n} : évitez de laisser couler l'eau.`:''}</p><div class="mute">Recommandation simulée à partir des consommations par zone.</div>`}
+function tick(){Z.forEach(z=>{z.v=Math.max(10,z.v+(Math.random()-.5)*3);if(z.v>60&&!alerted[z.id]){alerted[z.id]=1;toast('Alerte : consommation anormale détectée ('+z.n+')')}if(z.v<55)alerted[z.id]=0});eco+=Math.round(Math.random()*6);$('#eco').textContent=eco.toLocaleString('fr-FR')+' L';drawMap();drawDetail();rank();ia()}
+function hist(){const d=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'],t=(new Date().getDay()+6)%7,b=[3,7,4,5,2,6,0].map((v,i)=>i<t?v:i===t?reports.length:0),mx=Math.max(...b,1);
+ $('#hist').innerHTML=b.map((v,i)=>{const hh=v/mx*60,x=10+i*48;return `<rect x="${x}" y="${80-hh}" width="32" height="${hh}" rx="4" fill="${i===t?'#2F7FB5':'#C9D8E6'}"/><text x="${x+16}" y="${75-hh}" text-anchor="middle" font-size="11" fill="#0B2A55">${v}</text><text x="${x+16}" y="98" text-anchor="middle" font-size="11" fill="#5A6B80">${d[i]}</text>`}).join('')}
 
-const m = +$('#min').value;
-$('#minv').textContent = m;
-
-const litres = m * 10;
-const surplus = litres - 40;
-
-let impact = "";
-
-if (surplus <= 0) {
-impact = "Bravo ! Vous restez dans l'objectif recommandé.";
-}
-else if (surplus === 10) {
-impact = "1 minute supplémentaire = 10 litres d'eau consommés.";
-}
-else if (surplus === 20) {
-impact = "2 minutes supplémentaires = 20 litres d'eau consommés.";
-}
-else if (surplus === 30) {
-impact = "3 minutes supplémentaires = 30 litres d'eau consommés.";
-}
-else if (surplus === 40) {
-impact = "4 minutes supplémentaires = 40 litres, soit une douche supplémentaire.";
-}
-else if (surplus >= 50) {
-impact = `Attention : +${surplus} litres consommés. Cette durée dépasse largement l'objectif recommandé.`;
-}
-
-$('#shower').innerHTML = `
-<p style="font-size:22px;margin:8px 0 2px">
-<b>${litres} litres</b>
-</p>
-
-<div class="mute" style="font-size:13px">
-Objectif recommandé : 4 minutes (40 litres).
-</div>
-
-<div style="
-margin-top:10px;
-padding:10px;
-border-radius:8px;
-background:${surplus > 0 ? '#FFF3E0' : '#E8F5E9'};
-color:${surplus > 0 ? '#E65100' : '#2E7D32'};
-font-weight:600;">
-${impact}
-</div>
-`;
-};
-
-$('#min').oninput();
 // technicien
 function renderTech(){$('#k1').textContent=reports.filter(r=>r.status==='Nouveau').length;$('#k2').textContent=reports.filter(r=>r.status==='En cours').length;$('#k3').textContent=reports.filter(r=>r.status==='Résolu').length;
  $('#list').innerHTML=reports.length?reports.map((r,i)=>{const p=PE.find(x=>x[0]===r.pe);return `<div class="card rep">${r.photo?`<img src="${r.photo}" alt="Photo du signalement">`:'<div class="ph"></div>'}<div style="flex:1"><b>${esc(r.type)}</b> <span class="tag" style="background:${COL[r.status]}">${r.status}</span><div class="mute">${esc(r.id)} · ${p?esc(p[1]):'Autre lieu'} · ${new Date(r.ts).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>${r.desc?`<div style="font-size:13px;margin-top:4px">${esc(r.desc)}</div>`:''}<select data-i="${i}" aria-label="Statut de ${esc(r.id)}" style="margin-top:8px;padding:6px">${ST.map(s=>`<option ${s===r.status?'selected':''}>${s}</option>`).join('')}</select></div></div>`}).join(''):'<div class="card mute">Aucun signalement. Envoyez-en un depuis la vue Spectateur ou simulez-en un.</div>';
@@ -190,5 +161,10 @@ $$('nav button').forEach(b=>b.onclick=()=>tab(b.dataset.t));
 function mode(t){$('#m-spec').classList.toggle('on',!t);$('#m-tech').classList.toggle('on',t);$('#nav').style.display=t?'none':'flex';if(t)tab('s-tech');else tab('s-carte')}
 $('#m-spec').onclick=()=>mode(false);$('#m-tech').onclick=()=>mode(true);
 load();if(!Array.isArray(reports)){reports=[{id:'SIG-001',pe:'PE-07',type:'Fuite sur tuyau',desc:'Exemple de départ',photo:null,ts:new Date().toISOString(),status:'En cours'}];save()}
-drawMap();drawDetail();renderTech();
+renderTech=(f=>()=>{f();hist()})(renderTech);
+$('#min').oninput=showerUI;showerUI();drawMap();drawDetail();renderTech();rank();ia();setInterval(tick,3000);
+$('#go-spec').onclick=()=>{$('#splash').style.display='none';mode(false)};$('#go-tech').onclick=()=>{$('#splash').style.display='none';mode(true)};
+document.querySelector('header h1').onclick=()=>{$('#splash').style.display='flex'};
 </script></body></html>
+
+
